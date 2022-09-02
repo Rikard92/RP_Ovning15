@@ -14,10 +14,12 @@ namespace RP_Ovning15.Data.Data
         public static async Task<IApplicationBuilder> SeedDataAsync(this IApplicationBuilder app)
         {
             using (var scope = app.ApplicationServices.CreateScope())
-            {                
-
+            {
+                var service = scope.ServiceProvider;
+                var db = service.GetRequiredService<LmsApiContext>();
                 try
                 {
+                    await SeedDataDB.SeedTheData(db, service);
                 }
                 catch (Exception e)
                 {

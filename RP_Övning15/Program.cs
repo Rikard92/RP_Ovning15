@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using RP_Ovning15.Core.Repositories;
 using RP_Ovning15.Data.Data;
+using RP_Ovning15.Data.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<LmsApiContext>(options =>
@@ -15,6 +17,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddControllers( opt => opt.ReturnHttpNotAcceptable = true)
     .AddNewtonsoftJson()
     .AddXmlDataContractSerializerFormatters();
+builder.Services.AddScoped<IUnitofWork, UnitofWork>();
 
 var app = builder.Build();
 

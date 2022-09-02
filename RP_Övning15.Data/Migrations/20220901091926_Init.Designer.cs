@@ -12,7 +12,7 @@ using RP_Ovning15.Data.Data;
 namespace RP_Ovning15.Data.Migrations
 {
     [DbContext(typeof(LmsApiContext))]
-    [Migration("20220831110431_Init")]
+    [Migration("20220901091926_Init")]
     partial class Init
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

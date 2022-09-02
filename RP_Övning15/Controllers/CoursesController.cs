@@ -5,8 +5,11 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using RP_Ovning15.Core.Entities;
+using RP_Ovning15.Core.Repositories;
 using RP_Ovning15.Data.Data;
+using RP_Ovning15.Data.Repositories;
 
 namespace RP_Ovning15.Api.Controllers
 {
@@ -14,40 +17,32 @@ namespace RP_Ovning15.Api.Controllers
     [ApiController]
     public class CoursesController : ControllerBase
     {
-        private readonly LmsApiContext _context;
-
+        private readonly LmsApiContext db;
+        private readonly UnitofWork _unitOfWork;
+        
         public CoursesController(LmsApiContext context)
         {
-            _context = context;
+            db = context;
+            _unitOfWork = new UnitofWork(context);
         }
 
         // GET: api/Courses
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Course>>> GetCourse()
         {
-            if (_context.Course == null)
-            {
-                return NotFound();
-            }
-            return await _context.Course.ToListAsync();
+            var course = await _unitOfWork.CourseRepository.GetAllCourses();
+
+            //return await db.Course.Include(e => e.Modules).ToListAsync();
+            return Ok(course);
         }
 
         // GET: api/Courses/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Course>> GetCourse(int id)
         {
-            if (_context.Course == null)
-            {
-                return NotFound();
-            }
-            var course = await _context.Course.FindAsync(id);
+            var course = await _unitOfWork.CourseRepository.GetCourse(id);
 
-            if (course == null)
-            {
-                return NotFound();
-            }
-
-            return course;
+            return Ok(course); 
         }
 
         // PUT: api/Courses/5
@@ -60,11 +55,11 @@ namespace RP_Ovning15.Api.Controllers
                 return BadRequest();
             }
 
-            _context.Entry(course).State = EntityState.Modified;
+            _unitOfWork.CourseRepository.Update(course);
 
             try
             {
-                await _context.SaveChangesAsync();
+                await _unitOfWork.CompleteAsync();
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -86,12 +81,8 @@ namespace RP_Ovning15.Api.Controllers
         [HttpPost]
         public async Task<ActionResult<Course>> PostCourse(Course course)
         {
-            if (_context.Course == null)
-            {
-                return Problem("Entity set 'LmsApiContext.Course'  is null.");
-            }
-            _context.Course.Add(course);
-            await _context.SaveChangesAsync();
+            _unitOfWork.CourseRepository.Add(course);
+            await _unitOfWork.CompleteAsync();
 
             return CreatedAtAction("GetCourse", new { id = course.Id }, course);
         }
@@ -100,25 +91,22 @@ namespace RP_Ovning15.Api.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteCourse(int id)
         {
-            if (_context.Course == null)
-            {
-                return NotFound();
-            }
-            var course = await _context.Course.FindAsync(id);
+            
+           
+            var course = await _unitOfWork.CourseRepository.GetCourse(id);
             if (course == null)
             {
                 return NotFound();
             }
 
-            _context.Course.Remove(course);
-            await _context.SaveChangesAsync();
+            _unitOfWork.CourseRepository.Remove(course);
+            await _unitOfWork.CompleteAsync();
 
             return NoContent();
         }
-
         private bool CourseExists(int id)
         {
-            return (_context.Course?.Any(e => e.Id == id)).GetValueOrDefault();
+            return _unitOfWork.CourseRepository.AnyAsync(id).Result;
         }
     }
 }
