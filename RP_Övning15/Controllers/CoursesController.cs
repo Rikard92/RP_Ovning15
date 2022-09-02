@@ -17,12 +17,12 @@ namespace RP_Ovning15.Api.Controllers
     [ApiController]
     public class CoursesController : ControllerBase
     {
-        private readonly LmsApiContext db;
+        //private readonly LmsApiContext db;
         private readonly UnitofWork _unitOfWork;
         
         public CoursesController(LmsApiContext context)
         {
-            db = context;
+            //db = context;
             _unitOfWork = new UnitofWork(context);
         }
 

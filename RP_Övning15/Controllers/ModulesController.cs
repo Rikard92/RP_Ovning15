@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RP_Ovning15.Core.Entities;
 using RP_Ovning15.Data.Data;
+using RP_Ovning15.Data.Repositories;
 
 namespace RP_Ovning15.Api.Controllers
 {
@@ -14,57 +15,48 @@ namespace RP_Ovning15.Api.Controllers
     [ApiController]
     public class ModulesController : ControllerBase
     {
-        private readonly LmsApiContext db;
+        //private readonly LmsApiContext db;
+        private readonly UnitofWork _unitOfWork;
 
         public ModulesController(LmsApiContext context)
         {
-            db = context;
+            //db = context;
+            _unitOfWork = new UnitofWork(context);
         }
 
         // GET: api/Modules
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Module>>> GetModule()
         {
-          if (db.Module == null)
-          {
-              return NotFound();
-          }
-            return await db.Module.ToListAsync();
+            var module = await _unitOfWork.ModuleRepository.GetAllModules();
+
+            return Ok(module);
         }
 
         // GET: api/Modules/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Module>> GetModule(int id)
         {
-          if (db.Module == null)
-          {
-              return NotFound();
-          }
-            var @module = await db.Module.FindAsync(id);
+            var module = await _unitOfWork.ModuleRepository.GetModule(id);
 
-            if (@module == null)
-            {
-                return NotFound();
-            }
-
-            return @module;
+            return Ok(module);
         }
 
         // PUT: api/Modules/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutModule(int id, Module @module)
+        public async Task<IActionResult> PutModule(int id, Module module)
         {
-            if (id != @module.Id)
+            if (id != module.Id)
             {
                 return BadRequest();
             }
 
-            db.Entry(@module).State = EntityState.Modified;
+            _unitOfWork.ModuleRepository.Update(module);
 
             try
             {
-                await db.SaveChangesAsync();
+                await _unitOfWork.CompleteAsync();
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -84,41 +76,33 @@ namespace RP_Ovning15.Api.Controllers
         // POST: api/Modules
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Module>> PostModule(Module @module)
+        public async Task<ActionResult<Module>> PostModule(Module module)
         {
-          if (db.Module == null)
-          {
-              return Problem("Entity set 'LmsApiContext.Module'  is null.");
-          }
-            db.Module.Add(@module);
-            await db.SaveChangesAsync();
+            _unitOfWork.ModuleRepository.Add(module);
+            await _unitOfWork.CompleteAsync();
 
-            return CreatedAtAction("GetModule", new { id = @module.Id }, @module);
+            return CreatedAtAction("GetModule", new { id = module.Id }, module);
         }
 
         // DELETE: api/Modules/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteModule(int id)
         {
-            if (db.Module == null)
-            {
-                return NotFound();
-            }
-            var @module = await db.Module.FindAsync(id);
-            if (@module == null)
+            var module = await _unitOfWork.ModuleRepository.GetModule(id);
+            if (module == null)
             {
                 return NotFound();
             }
 
-            db.Module.Remove(@module);
-            await db.SaveChangesAsync();
+            _unitOfWork.ModuleRepository.Remove(module);
+            await _unitOfWork.CompleteAsync();
 
             return NoContent();
         }
 
         private bool ModuleExists(int id)
         {
-            return (db.Module?.Any(e => e.Id == id)).GetValueOrDefault();
+            return _unitOfWork.ModuleRepository.AnyAsync(id).Result;
         }
     }
 }
