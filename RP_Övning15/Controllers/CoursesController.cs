@@ -2,14 +2,17 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using RP_Ovning15.Core.Dto;
 using RP_Ovning15.Core.Entities;
 using RP_Ovning15.Core.Repositories;
 using RP_Ovning15.Data.Data;
 using RP_Ovning15.Data.Repositories;
+using AutoMapper;
 
 namespace RP_Ovning15.Api.Controllers
 {
@@ -19,21 +22,23 @@ namespace RP_Ovning15.Api.Controllers
     {
         //private readonly LmsApiContext db;
         private readonly UnitofWork _unitOfWork;
+        private readonly IMapper _mapper;
         
-        public CoursesController(LmsApiContext context)
+        public CoursesController(LmsApiContext context, IMapper mapper)
         {
             //db = context;
             _unitOfWork = new UnitofWork(context);
+            _mapper = mapper;
         }
 
         // GET: api/Courses
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Course>>> GetCourse()
         {
-            var course = await _unitOfWork.CourseRepository.GetAllCourses();
+            var courses = await _unitOfWork.CourseRepository.GetAllCourses();
+            var dto = _mapper.Map<IEnumerable<CourseDto>>(courses);
 
-            //return await db.Course.Include(e => e.Modules).ToListAsync();
-            return Ok(course);
+            return Ok(dto);
         }
 
         // GET: api/Courses/5
@@ -41,20 +46,18 @@ namespace RP_Ovning15.Api.Controllers
         public async Task<ActionResult<Course>> GetCourse(int id)
         {
             var course = await _unitOfWork.CourseRepository.GetCourse(id);
-
-            return Ok(course); 
+            var dto = _mapper.Map<CourseDto>(course);
+            return Ok(dto); 
         }
 
         // PUT: api/Courses/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutCourse(int id, Course course)
+        public async Task<IActionResult> PutCourse(int id, CourseDto dto)
         {
-            if (id != course.Id)
-            {
-                return BadRequest();
-            }
 
+            var course = _mapper.Map<Course>(dto);
+            course.Id = id;
             _unitOfWork.CourseRepository.Update(course);
 
             try
@@ -73,14 +76,16 @@ namespace RP_Ovning15.Api.Controllers
                 }
             }
 
-            return NoContent();
+            return Ok(NoContent());
         }
 
         // POST: api/Courses
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Course>> PostCourse(Course course)
+        public async Task<ActionResult<Course>> PostCourse(CourseDto dto)
         {
+
+            var course = _mapper.Map<Course>(dto);
             _unitOfWork.CourseRepository.Add(course);
             await _unitOfWork.CompleteAsync();
 

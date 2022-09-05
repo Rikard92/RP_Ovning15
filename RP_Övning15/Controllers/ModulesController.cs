@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using RP_Ovning15.Core.Dto;
 using RP_Ovning15.Core.Entities;
 using RP_Ovning15.Data.Data;
 using RP_Ovning15.Data.Repositories;
@@ -17,11 +19,13 @@ namespace RP_Ovning15.Api.Controllers
     {
         //private readonly LmsApiContext db;
         private readonly UnitofWork _unitOfWork;
+        private readonly IMapper _mapper;
 
-        public ModulesController(LmsApiContext context)
+        public ModulesController(LmsApiContext context, IMapper mapper)
         {
             //db = context;
             _unitOfWork = new UnitofWork(context);
+            _mapper = mapper;
         }
 
         // GET: api/Modules
@@ -29,8 +33,9 @@ namespace RP_Ovning15.Api.Controllers
         public async Task<ActionResult<IEnumerable<Module>>> GetModule()
         {
             var module = await _unitOfWork.ModuleRepository.GetAllModules();
+            var dto = _mapper.Map<IEnumerable<ModuleDto>>(module);
 
-            return Ok(module);
+            return Ok(dto);
         }
 
         // GET: api/Modules/5
@@ -38,20 +43,17 @@ namespace RP_Ovning15.Api.Controllers
         public async Task<ActionResult<Module>> GetModule(int id)
         {
             var module = await _unitOfWork.ModuleRepository.GetModule(id);
-
-            return Ok(module);
+            var dto = _mapper.Map<ModuleDto>(module);
+            return Ok(dto);
         }
 
         // PUT: api/Modules/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutModule(int id, Module module)
+        public async Task<IActionResult> PutModule(int id, ModuleDto dto)
         {
-            if (id != module.Id)
-            {
-                return BadRequest();
-            }
-
+            var module = _mapper.Map<Module>(dto);
+            module.Id = id;
             _unitOfWork.ModuleRepository.Update(module);
 
             try
@@ -76,8 +78,9 @@ namespace RP_Ovning15.Api.Controllers
         // POST: api/Modules
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Module>> PostModule(Module module)
+        public async Task<ActionResult<Module>> PostModule(ModuleDto dto)
         {
+            var module = _mapper.Map<Module>(dto);
             _unitOfWork.ModuleRepository.Add(module);
             await _unitOfWork.CompleteAsync();
 

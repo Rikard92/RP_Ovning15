@@ -18,6 +18,7 @@ builder.Services.AddControllers( opt => opt.ReturnHttpNotAcceptable = true)
     .AddNewtonsoftJson()
     .AddXmlDataContractSerializerFormatters();
 builder.Services.AddScoped<IUnitofWork, UnitofWork>();
+builder.Services.AddAutoMapper(typeof(LmsMappings));
 
 var app = builder.Build();
 
